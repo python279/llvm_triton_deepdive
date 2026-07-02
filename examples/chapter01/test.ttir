@@ -1,0 +1,6 @@
+module {
+  tt.func @add_kernel(%arg0: !tt.ptr<f32>) {
+    %0 = tt.get_program_id x : i32
+    tt.return
+  }
+}

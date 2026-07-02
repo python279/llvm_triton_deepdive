@@ -1,0 +1,9 @@
+#blocked = #ttg.blocked<{sizePerThread = [1], threadsPerWarp = [32], warpsPerCTA = [4], order = [0]}>
+
+module attributes {"ttg.num-warps" = 4 : i32} {
+  tt.func public @add(%a: !tt.ptr<f32>, %b: !tt.ptr<f32>) {
+    %0 = tt.get_program_id x : i32
+  %t = tt.splat %0 : i32 -> tensor<128xi32, #blocked>
+    tt.return
+  }
+}

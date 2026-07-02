@@ -1,0 +1,23 @@
+#blocked = #ttg.blocked<{sizePerThread = [1], threadsPerWarp = [32], warpsPerCTA = [4], order = [0]}>
+
+module attributes {"ttg.num-warps" = 4 : i32} {
+  tt.func public @vector_add(%ptr_a: !tt.ptr<f32>, %ptr_b: !tt.ptr<f32>, %ptr_out: !tt.ptr<f32>) {
+    %c1024 = arith.constant 1024 : i32
+    %pid = tt.get_program_id x : i32
+    %off = arith.muli %pid, %c1024 : i32
+    %off_t = tt.splat %off : i32 -> tensor<1024xi32, #blocked>
+    %range = tt.make_range {end = 1024 : i32, start = 0 : i32} : tensor<1024xi32, #blocked>
+    %idx = arith.addi %off_t, %range : tensor<1024xi32, #blocked>
+    %pa = tt.splat %ptr_a : !tt.ptr<f32> -> tensor<1024x!tt.ptr<f32>, #blocked>
+    %pb = tt.splat %ptr_b : !tt.ptr<f32> -> tensor<1024x!tt.ptr<f32>, #blocked>
+    %po = tt.splat %ptr_out : !tt.ptr<f32> -> tensor<1024x!tt.ptr<f32>, #blocked>
+    %a_addr = tt.addptr %pa, %idx : tensor<1024x!tt.ptr<f32>, #blocked>, tensor<1024xi32, #blocked>
+    %b_addr = tt.addptr %pb, %idx : tensor<1024x!tt.ptr<f32>, #blocked>, tensor<1024xi32, #blocked>
+    %o_addr = tt.addptr %po, %idx : tensor<1024x!tt.ptr<f32>, #blocked>, tensor<1024xi32, #blocked>
+    %a = tt.load %a_addr : tensor<1024xf32, #blocked>
+    %b = tt.load %b_addr : tensor<1024xf32, #blocked>
+    %sum = arith.addf %a, %b : tensor<1024xf32, #blocked>
+    tt.store %o_addr, %sum : tensor<1024xf32, #blocked>
+    tt.return
+  }
+}

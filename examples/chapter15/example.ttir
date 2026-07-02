@@ -1,0 +1,27 @@
+module {
+  tt.func public @example_kernel(
+      %arg0: !tt.ptr<f32> {tt.divisibility = 16 : i32},
+      %arg1: !tt.ptr<f32> {tt.divisibility = 16 : i32},
+      %arg2: !tt.ptr<f32> {tt.divisibility = 16 : i32},
+      %n: i32) {
+    %pid = tt.get_program_id x : i32
+    %c1024 = arith.constant 1024 : i32
+    %base = arith.muli %pid, %c1024 : i32
+    %range = tt.make_range {end = 1024 : i32, start = 0 : i32} : tensor<1024xi32>
+    %base_t = tt.splat %base : i32 -> tensor<1024xi32>
+    %offsets = arith.addi %base_t, %range : tensor<1024xi32>
+    %n_t = tt.splat %n : i32 -> tensor<1024xi32>
+    %mask = arith.cmpi slt, %offsets, %n_t : tensor<1024xi32>
+    %pa = tt.splat %arg0 : !tt.ptr<f32> -> tensor<1024x!tt.ptr<f32>>
+    %pb = tt.splat %arg1 : !tt.ptr<f32> -> tensor<1024x!tt.ptr<f32>>
+    %po = tt.splat %arg2 : !tt.ptr<f32> -> tensor<1024x!tt.ptr<f32>>
+    %xa = tt.addptr %pa, %offsets : tensor<1024x!tt.ptr<f32>>, tensor<1024xi32>
+    %xb = tt.addptr %pb, %offsets : tensor<1024x!tt.ptr<f32>>, tensor<1024xi32>
+    %xo = tt.addptr %po, %offsets : tensor<1024x!tt.ptr<f32>>, tensor<1024xi32>
+    %x = tt.load %xa, %mask : tensor<1024xf32>
+    %y = tt.load %xb, %mask : tensor<1024xf32>
+    %sum = arith.addf %x, %y : tensor<1024xf32>
+    tt.store %xo, %sum, %mask : tensor<1024xf32>
+    tt.return
+  }
+}
